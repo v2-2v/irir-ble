@@ -38,7 +38,7 @@
 
     function handleNotify(event) {
       const value = new TextDecoder().decode(event.target.value);
-      log("ESPから: " + value);
+      log(value);
     }
 
     async function sendToESP() {

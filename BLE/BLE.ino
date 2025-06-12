@@ -10,7 +10,14 @@
 BLEServer *pServer;
 BLEService *pService;
 BLECharacteristic *pCharacteristic;
+
 bool deviceConnected = false;
+bool measuring = false;
+unsigned long measureStartTime = 0;
+
+const int MAX_BUFFER_SIZE = 1024;
+int dataBuffer[MAX_BUFFER_SIZE];
+int bufferIndex = 0;
 
 class MyServerCallbacks : public BLEServerCallbacks {
   void onConnect(BLEServer* pServer) {
@@ -21,8 +28,6 @@ class MyServerCallbacks : public BLEServerCallbacks {
   void onDisconnect(BLEServer* pServer) {
     deviceConnected = false;
     Serial.println("🔌 クライアントが切断されました");
-
-    // BLEスタックは初期化済みなので、広告だけ再開する
     BLEDevice::startAdvertising();
     Serial.println("🔄 広告を再開しました");
   }
@@ -34,6 +39,39 @@ class MyCallbacks : public BLECharacteristicCallbacks {
     if (rxValue.length() > 0) {
       Serial.print("📥 受信データ: ");
       Serial.println(rxValue);
+
+      if (rxValue == "start") {
+        measuring = true;
+        bufferIndex = 0;
+        measureStartTime = millis();
+        Serial.println("🟢 データ計測を開始します");
+        pCharacteristic->setValue("🟢 計測開始");
+        pCharacteristic->notify();
+      } else if (rxValue == "stop") {
+        measuring = false;
+        unsigned long elapsed = millis() - measureStartTime;
+        Serial.println("🛑 データ計測を終了します");
+
+        // データを文字列に変換して送信
+        String dataString = "[";
+        for (int i = 0; i < bufferIndex; i++) {
+          dataString += String(dataBuffer[i]);
+          if (i < bufferIndex - 1) {
+            dataString += ",";
+          }
+        }
+        dataString += "]";
+        pCharacteristic->setValue(dataString.c_str());
+        pCharacteristic->notify();
+
+        // バッファ内容をすべてシリアル出力
+        Serial.print("📦 測定データ: ");
+        for (int i = 0; i < bufferIndex; i++) {
+          Serial.print(dataBuffer[i]);
+          Serial.print(" ");
+        }
+        Serial.println();
+      }
     }
   }
 };
@@ -67,14 +105,17 @@ void setup() {
 }
 
 void loop() {
-  if (deviceConnected) {
-    static unsigned long lastTime = 0;
-    if (millis() - lastTime > 3000) {
-      lastTime = millis();
-      String message = "⏱ 通知: " + String(millis() / 1000) + "秒";
-      pCharacteristic->setValue(message.c_str());
-      pCharacteristic->notify();
-      Serial.println("📤 Notify送信: " + message);
+  if (deviceConnected && measuring) {
+    static unsigned long lastSampleTime = 0;
+    if (millis() - lastSampleTime > 100) { // 100msごとに仮データ追加
+      lastSampleTime = millis();
+
+      if (bufferIndex < MAX_BUFFER_SIZE) {
+        dataBuffer[bufferIndex++] = 0;  // ★ 実際には analogRead(A0) などに置換
+        Serial.println("+ データ追加: 0");
+      } else {
+        Serial.println("⚠️ バッファがいっぱいです");
+      }
     }
   }
 }
