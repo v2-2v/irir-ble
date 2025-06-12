@@ -40,14 +40,14 @@ class MyCallbacks : public BLECharacteristicCallbacks {
       Serial.print("📥 受信データ: ");
       Serial.println(rxValue);
 
-      if (rxValue == "開始") {
+      if (rxValue == "start") {
         measuring = true;
         bufferIndex = 0;
         measureStartTime = millis();
         Serial.println("🟢 データ計測を開始します");
         pCharacteristic->setValue("🟢 計測開始");
         pCharacteristic->notify();
-      } else if (rxValue == "終了") {
+      } else if (rxValue == "stop") {
         measuring = false;
         unsigned long elapsed = millis() - measureStartTime;
         Serial.println("🛑 データ計測を終了します");
@@ -112,7 +112,7 @@ void loop() {
 
       if (bufferIndex < MAX_BUFFER_SIZE) {
         dataBuffer[bufferIndex++] = 0;  // ★ 実際には analogRead(A0) などに置換
-        Serial.println("➕ データ追加: 0");
+        Serial.println("+ データ追加: 0");
       } else {
         Serial.println("⚠️ バッファがいっぱいです");
       }
