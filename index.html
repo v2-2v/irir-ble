@@ -5,7 +5,7 @@
   <title>ESP32 Web Bluetooth通信</title>
 </head>
 <body>
-  <h1>ESP32とBLE通信</h1>
+  <h1>device_1</h1>
   <button onclick="connect()">接続</button><br><br>
   <input type="text" id="textToSend" placeholder="送信する文字列">
   <button onclick="sendToESP()">送信</button>
@@ -13,7 +13,7 @@
 
   <script>
     let characteristic;
-    const device_name='ESP32_BLE1'
+    const device_name='device_1'
     const service_uuid='12345678-1234-1234-1234-1234567890ab'
     const characteristic_uuid='abcdefab-1234-1234-1234-abcdefabcdef'
     async function connect() {
