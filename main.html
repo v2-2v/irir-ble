@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>ESP32 Web Bluetooth通信</title>
+</head>
+<body>
+  <h1>ESP32とBLE通信</h1>
+  <button onclick="connect()">接続</button><br><br>
+  <input type="text" id="textToSend" placeholder="送信する文字列">
+  <button onclick="sendToESP()">送信</button>
+  <p id="log">ログ: <span id="logText">未接続</span></p>
+
+  <script>
+    let characteristic;
+    const device_name='ESP32_BLE1'
+    const service_uuid='12345678-1234-1234-1234-1234567890ab'
+    const characteristic_uuid='abcdefab-1234-1234-1234-abcdefabcdef'
+    async function connect() {
+      try {
+        const device = await navigator.bluetooth.requestDevice({
+          filters: [{ name: device_name }],
+          optionalServices: [service_uuid]
+        });
+
+        const server = await device.gatt.connect();
+        const service = await server.getPrimaryService(service_uuid);
+        characteristic = await service.getCharacteristic(characteristic_uuid);
+
+        await characteristic.startNotifications();
+        characteristic.addEventListener('characteristicvaluechanged', handleNotify);
+
+        log("接続完了＆通知待機中");
+      } catch (error) {
+        log("接続エラー: " + error);
+      }
+    }
+
+    function handleNotify(event) {
+      const value = new TextDecoder().decode(event.target.value);
+      log("ESPから: " + value);
+    }
+
+    async function sendToESP() {
+      if (!characteristic) {
+        log("まだ接続されていません");
+        return;
+      }
+      const text = document.getElementById("textToSend").value;
+      const data = new TextEncoder().encode(text);
+      await characteristic.writeValue(data);
+      log("送信済: " + text);
+    }
+
+    function log(text) {
+      document.getElementById("logText").textContent = text;
+      console.log(text);
+    }
+  </script>
+</body>
+</html>
