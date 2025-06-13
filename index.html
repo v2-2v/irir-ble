@@ -20,7 +20,12 @@
 
   let dataArray = [];
   let prevFiltered = 0;
-  const alpha = 0.7; // 0〜1（小さいほど滑らか）
+  const alpha = 0.4; // 0〜1（小さいほど滑らか）
+
+  let beatCount = 0;
+  let lastBeatTime = 0;
+  let threshold = 2080; // 適宜調整（センサによって異なる）
+  let aboveThreshold = false;
 
   async function connect() {
     try {
@@ -48,9 +53,24 @@
 
     if (!isNaN(valueNum)) {
       const filtered = lowPassFilter(valueNum);
+      detectBeat(filtered);
       addData(Math.round(filtered)); // 
     } else {
       log("数値変換失敗: " + valueStr);
+    }
+  }
+
+  function detectBeat(value) {
+  const now = Date.now();
+  if (value > threshold && !aboveThreshold) {
+    if (now - lastBeatTime > 300) { // 300ms以上空ける（≒200bpm未満制限）
+      beatCount++;
+      lastBeatTime = now;
+      log(`ドックン ${beatCount} 回`);
+    }
+    aboveThreshold = true;
+    } else if (value < threshold) {
+      aboveThreshold = false;
     }
   }
 
@@ -77,7 +97,7 @@
 
   function addData(data) {
     dataArray.push(data);
-    document.getElementById("dataText").textContent = JSON.stringify(dataArray.slice(-1));
+    document.getElementById("dataText").textContent = JSON.stringify(dataArray)//.slice(-1));
   }
 </script>
 
