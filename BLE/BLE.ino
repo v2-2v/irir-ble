@@ -39,7 +39,7 @@ class MyCallbacks : public BLECharacteristicCallbacks {
         measuring = true;
         measureStartTime = millis();
         Serial.println("🟢 データ計測を開始します");
-        pCharacteristic->setValue("🟢 計測開始");
+        pCharacteristic->setValue("");
         pCharacteristic->notify();
       } else if (rxValue == "stop") {
         measuring = false;

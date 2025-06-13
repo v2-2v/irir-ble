@@ -5,7 +5,7 @@
   <title>ESP32 Web Bluetooth通信</title>
 </head>
 <body>
-  <h1>てすと2</h1>
+  <h1>てすと3</h1>
   <button onclick="connect()">接続</button><br><br>
   <input type="text" id="textToSend" placeholder="送信する文字列">
   <button onclick="sendToESP()">送信</button>
@@ -58,6 +58,9 @@
     }
 
     function addData(data) {
+    if (data == ""){
+      return;
+    }
     const element = document.getElementById("dataText");
     let currentText = element.textContent;
     let array = [];
