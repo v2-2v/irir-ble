@@ -5,7 +5,7 @@
   <title>ESP32 Web Bluetooth通信</title>
 </head>
 <body>
-  <h1>LPF1 BB</h1>
+  <h1>LPF1 BB2</h1>
   <button onclick="connect()">接続</button><br><br>
   <input type="text" id="textToSend" placeholder="送信する文字列">
   <button onclick="sendToESP()">送信</button>
@@ -77,7 +77,7 @@
 
   function addData(data) {
     dataArray.push(data);
-    //document.getElementById("dataText").textContent = JSON.stringify(dataArray.slice(-20)); // 最新20個だけ表示
+    document.getElementById("dataText").textContent = JSON.stringify(dataArray)//dataArray.slice(-20)); // 最新20個だけ表示
   }
 </script>
 
