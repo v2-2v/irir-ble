@@ -5,7 +5,7 @@
   <title>ESP32 Web Bluetooth通信</title>
 </head>
 <body>
-  <h1>てすとX</h1>
+  <h1>LPF1</h1>
   <button onclick="connect()">接続</button><br><br>
   <input type="text" id="textToSend" placeholder="送信する文字列">
   <button onclick="sendToESP()">送信</button>
@@ -13,57 +13,73 @@
   <div id="dataText">[]</div>
 
   <script>
-    let characteristic;
-    const device_name='ESP32'
-    const service_uuid='12345678-1234-1234-1234-1234567890ab'
-    const characteristic_uuid='abcdefab-1234-1234-1234-abcdefabcdef'
+  let characteristic;
+  const device_name = 'ESP32';
+  const service_uuid = '12345678-1234-1234-1234-1234567890ab';
+  const characteristic_uuid = 'abcdefab-1234-1234-1234-abcdefabcdef';
 
-    let dataArray = []; // ← グローバルに保持したい配列
-    async function connect() {
-      try {
-        const device = await navigator.bluetooth.requestDevice({
-          filters: [{ name: device_name }],
-          optionalServices: [service_uuid]
-        });
+  let dataArray = [];
+  let prevFiltered = 0;
+  const alpha = 0.1; // 0〜1（小さいほど滑らか）
 
-        const server = await device.gatt.connect();
-        const service = await server.getPrimaryService(service_uuid);
-        characteristic = await service.getCharacteristic(characteristic_uuid);
+  async function connect() {
+    try {
+      const device = await navigator.bluetooth.requestDevice({
+        filters: [{ name: device_name }],
+        optionalServices: [service_uuid]
+      });
 
-        await characteristic.startNotifications();
-        characteristic.addEventListener('characteristicvaluechanged', handleNotify);
+      const server = await device.gatt.connect();
+      const service = await server.getPrimaryService(service_uuid);
+      characteristic = await service.getCharacteristic(characteristic_uuid);
 
-        log("接続完了＆通知待機中");
-      } catch (error) {
-        log("接続エラー: " + error);
-      }
+      await characteristic.startNotifications();
+      characteristic.addEventListener('characteristicvaluechanged', handleNotify);
+
+      log("接続完了＆通知待機中");
+    } catch (error) {
+      log("接続エラー: " + error);
     }
+  }
 
-    function handleNotify(event) {
-      const value = new TextDecoder().decode(event.target.value);
-      addData(value);
-    }
+  function handleNotify(event) {
+    const valueStr = new TextDecoder().decode(event.target.value).trim();
+    const valueNum = parseFloat(valueStr);
 
-    async function sendToESP() {
-      if (!characteristic) {
-        log("まだ接続されていません");
-        return;
-      }
-      const text = document.getElementById("textToSend").value;
-      const data = new TextEncoder().encode(text);
-      await characteristic.writeValue(data);
-      log("送信済: " + text);
+    if (!isNaN(valueNum)) {
+      const filtered = lowPassFilter(valueNum);
+      addData(filtered);
+    } else {
+      log("数値変換失敗: " + valueStr);
     }
+  }
 
-    function log(text) {
-      document.getElementById("logText").textContent = text;
-    }
+  function lowPassFilter(currentValue) {
+    const filtered = alpha * currentValue + (1 - alpha) * prevFiltered;
+    prevFiltered = filtered;
+    return filtered;
+  }
 
-    function addData(data) {
-      if (data === "") return;
-      dataArray.push(data);
-      document.getElementById("dataText").textContent = JSON.stringify(dataArray);
+  async function sendToESP() {
+    if (!characteristic) {
+      log("まだ接続されていません");
+      return;
     }
-  </script>
+    const text = document.getElementById("textToSend").value;
+    const data = new TextEncoder().encode(text);
+    await characteristic.writeValue(data);
+    log("送信済: " + text);
+  }
+
+  function log(text) {
+    document.getElementById("logText").textContent = text;
+  }
+
+  function addData(data) {
+    dataArray.push(data);
+    document.getElementById("dataText").textContent = JSON.stringify(dataArray.slice(-20)); // 最新20個だけ表示
+  }
+</script>
+
 </body>
 </html>
