@@ -18,7 +18,6 @@ bool measuring = false;
 unsigned long measureStartTime = 0;
 
 const int MAX_BUFFER_SIZE = 1024;
-int dataBuffer[MAX_BUFFER_SIZE];
 int bufferIndex = 0;
 
 class MyServerCallbacks : public BLEServerCallbacks {
@@ -44,7 +43,6 @@ class MyCallbacks : public BLECharacteristicCallbacks {
 
       if (rxValue == "start") {
         measuring = true;
-        bufferIndex = 0;
         measureStartTime = millis();
         Serial.println("🟢 データ計測を開始します");
         pCharacteristic->setValue("🟢 計測開始");
@@ -53,25 +51,7 @@ class MyCallbacks : public BLECharacteristicCallbacks {
         measuring = false;
         unsigned long elapsed = millis() - measureStartTime;
         Serial.println("🛑 データ計測を終了します");
-
-        // データを文字列に変換して送信
-        String dataString = "[";
-        for (int i = 0; i < bufferIndex; i++) {
-          dataString += String(dataBuffer[i]);
-          if (i < bufferIndex - 1) {
-            dataString += ",";
-          }
-        }
-        dataString += "]";
-        pCharacteristic->setValue(dataString.c_str());
-        pCharacteristic->notify();
-
-        // バッファ内容をすべてシリアル出力
         Serial.print("📦 測定データ: ");
-        for (int i = 0; i < bufferIndex; i++) {
-          Serial.print(dataBuffer[i]);
-          Serial.print(" ");
-        }
         Serial.println();
       }
     }
@@ -109,15 +89,14 @@ void setup() {
 void loop() {
   if (deviceConnected && measuring) {
     static unsigned long lastSampleTime = 0;
-    if (millis() - lastSampleTime > 100) {
+    if (millis() - lastSampleTime > 50) {
       lastSampleTime = millis();
 
       if (bufferIndex < MAX_BUFFER_SIZE) {
         int data = analogRead(sensorPin);
-        dataBuffer[bufferIndex++] = data;  // ★ 実際には analogRead(A0) などに置換
-        Serial.printf("+ %d \n",data);
-      } else {
-        Serial.println("⚠️ バッファがいっぱいです");
+        String dataStr = String(data);
+        pCharacteristic->setValue(dataStr.c_str());
+        pCharacteristic->notify();
       }
     }
   }
