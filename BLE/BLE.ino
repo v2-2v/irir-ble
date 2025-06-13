@@ -3,9 +3,11 @@
 #include <BLEServer.h>
 #include <BLE2902.h>
 
-#define DEVICE_NAME         "device_1"
+#define DEVICE_NAME         "ESP32"
 #define SERVICE_UUID        "12345678-1234-1234-1234-1234567890ab"
 #define CHARACTERISTIC_UUID "abcdefab-1234-1234-1234-abcdefabcdef"
+
+const int sensorPin = 15;
 
 BLEServer *pServer;
 BLEService *pService;
@@ -16,7 +18,6 @@ bool measuring = false;
 unsigned long measureStartTime = 0;
 
 const int MAX_BUFFER_SIZE = 1024;
-int dataBuffer[MAX_BUFFER_SIZE];
 int bufferIndex = 0;
 
 class MyServerCallbacks : public BLEServerCallbacks {
@@ -42,7 +43,6 @@ class MyCallbacks : public BLECharacteristicCallbacks {
 
       if (rxValue == "start") {
         measuring = true;
-        bufferIndex = 0;
         measureStartTime = millis();
         Serial.println("🟢 データ計測を開始します");
         pCharacteristic->setValue("🟢 計測開始");
@@ -51,25 +51,7 @@ class MyCallbacks : public BLECharacteristicCallbacks {
         measuring = false;
         unsigned long elapsed = millis() - measureStartTime;
         Serial.println("🛑 データ計測を終了します");
-
-        // データを文字列に変換して送信
-        String dataString = "[";
-        for (int i = 0; i < bufferIndex; i++) {
-          dataString += String(dataBuffer[i]);
-          if (i < bufferIndex - 1) {
-            dataString += ",";
-          }
-        }
-        dataString += "]";
-        pCharacteristic->setValue(dataString.c_str());
-        pCharacteristic->notify();
-
-        // バッファ内容をすべてシリアル出力
         Serial.print("📦 測定データ: ");
-        for (int i = 0; i < bufferIndex; i++) {
-          Serial.print(dataBuffer[i]);
-          Serial.print(" ");
-        }
         Serial.println();
       }
     }
@@ -107,14 +89,14 @@ void setup() {
 void loop() {
   if (deviceConnected && measuring) {
     static unsigned long lastSampleTime = 0;
-    if (millis() - lastSampleTime > 100) { // 100msごとに仮データ追加
+    if (millis() - lastSampleTime > 50) {
       lastSampleTime = millis();
 
       if (bufferIndex < MAX_BUFFER_SIZE) {
-        dataBuffer[bufferIndex++] = 0;  // ★ 実際には analogRead(A0) などに置換
-        Serial.println("+ データ追加: 0");
-      } else {
-        Serial.println("⚠️ バッファがいっぱいです");
+        int data = analogRead(sensorPin);
+        String dataStr = String(data);
+        pCharacteristic->setValue(dataStr.c_str());
+        pCharacteristic->notify();
       }
     }
   }
