@@ -5,11 +5,12 @@
   <title>ESP32 Web Bluetooth通信</title>
 </head>
 <body>
-  <h1>device_1</h1>
+  <h1>てすと</h1>
   <button onclick="connect()">接続</button><br><br>
   <input type="text" id="textToSend" placeholder="送信する文字列">
   <button onclick="sendToESP()">送信</button>
   <p id="log">ログ: <span id="logText">未接続</span></p>
+  <div id="dataText">[]</div>
 
   <script>
     let characteristic;
@@ -54,7 +55,19 @@
 
     function log(text) {
       document.getElementById("logText").textContent = text;
-      console.log(text);
+    }
+
+    function addData(data) {
+    const element = document.getElementById("dataText");
+    let currentText = element.textContent;
+    let array = [];
+    try {
+      array = JSON.parse(currentText);
+    } catch (e) {
+      console.error("配列のパースに失敗しました");
+    }
+    array.push(data);
+    element.textContent = JSON.stringify(array);
     }
   </script>
 </body>
