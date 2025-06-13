@@ -20,7 +20,7 @@
 
   let dataArray = [];
   let prevFiltered = 0;
-  const alpha = 0.1; // 0〜1（小さいほど滑らか）
+  const alpha = 0.7; // 0〜1（小さいほど滑らか）
 
   async function connect() {
     try {
@@ -48,7 +48,7 @@
 
     if (!isNaN(valueNum)) {
       const filtered = lowPassFilter(valueNum);
-      addData(filtered);
+      addData(Math.round(filtered)); // 
     } else {
       log("数値変換失敗: " + valueStr);
     }
@@ -77,7 +77,7 @@
 
   function addData(data) {
     dataArray.push(data);
-    document.getElementById("dataText").textContent = JSON.stringify(dataArray)//dataArray.slice(-20)); // 最新20個だけ表示
+    document.getElementById("dataText").textContent = JSON.stringify(dataArray.slice(-1));
   }
 </script>
 

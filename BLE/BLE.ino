@@ -51,7 +51,7 @@ class MyCallbacks : public BLECharacteristicCallbacks {
 };
 
 void setup() {
-  Serial.begin(115200);
+  Serial.begin(460800);
   BLEDevice::init(DEVICE_NAME);
   pServer = BLEDevice::createServer();
   pServer->setCallbacks(new MyServerCallbacks());
@@ -75,12 +75,13 @@ void setup() {
 void loop() {
   if (deviceConnected && measuring) {
     static unsigned long lastSampleTime = 0;
-    if (millis() - lastSampleTime > 50) {
+    if (millis() - lastSampleTime > 25) {
       lastSampleTime = millis();
       int data = analogRead(sensorPin);
       String dataStr = String(data);
       pCharacteristic->setValue(dataStr.c_str());
       pCharacteristic->notify();
+      Serial.println(dataStr);
     }
   }
 }
