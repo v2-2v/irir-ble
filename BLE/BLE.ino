@@ -3,9 +3,11 @@
 #include <BLEServer.h>
 #include <BLE2902.h>
 
-#define DEVICE_NAME         "device_1"
+#define DEVICE_NAME         "ESP32"
 #define SERVICE_UUID        "12345678-1234-1234-1234-1234567890ab"
 #define CHARACTERISTIC_UUID "abcdefab-1234-1234-1234-abcdefabcdef"
+
+const int sensorPin = 15;
 
 BLEServer *pServer;
 BLEService *pService;
@@ -107,12 +109,13 @@ void setup() {
 void loop() {
   if (deviceConnected && measuring) {
     static unsigned long lastSampleTime = 0;
-    if (millis() - lastSampleTime > 100) { // 100msごとに仮データ追加
+    if (millis() - lastSampleTime > 100) {
       lastSampleTime = millis();
 
       if (bufferIndex < MAX_BUFFER_SIZE) {
-        dataBuffer[bufferIndex++] = 0;  // ★ 実際には analogRead(A0) などに置換
-        Serial.println("+ データ追加: 0");
+        int data = analogRead(sensorPin);
+        dataBuffer[bufferIndex++] = data;  // ★ 実際には analogRead(A0) などに置換
+        Serial.printf("+ %d \n",data);
       } else {
         Serial.println("⚠️ バッファがいっぱいです");
       }
