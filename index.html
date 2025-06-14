@@ -3,6 +3,11 @@
 <head>
   <meta charset="utf-8">
   <title>ESP32 Web Bluetooth通信</title>
+  <style>
+    canvas {
+      border: 1px solid #000;
+    }
+  </style>
 </head>
 <body>
   <h1>LPF1 BB2</h1>
@@ -14,6 +19,9 @@
   <p id="log">ログ: <span id="logText">未接続</span></p>
   <div id="dataText">[]</div>
 
+  <!-- グラフ描画用 -->
+  <canvas id="graph" width="800" height="200"></canvas>
+
   <script>
   let characteristic;
   const device_name = 'ESP32';
@@ -22,12 +30,15 @@
 
   let dataArray = [];
   let prevFiltered = 0;
-  const alpha = 0.4; // 0〜1（小さいほど滑らか）
+  const alpha = 0.4;
 
   let beatCount = 0;
   let lastBeatTime = 0;
-  let threshold = 2080; // 適宜調整（センサによって異なる）
+  let threshold = 2080;
   let aboveThreshold = false;
+
+  const canvas = document.getElementById("graph");
+  const ctx = canvas.getContext("2d");
 
   async function connect() {
     try {
@@ -55,38 +66,33 @@
     if (!isNaN(valueNum)) {
       const filtered = lowPassFilter(valueNum);
       detectBeat(filtered);
-      addData(Math.round(filtered)); // 
+      addData(Math.round(filtered));
     }
   }
 
   function detectBeat(value) {
-  const now = Date.now();
-  if (value > threshold && !aboveThreshold) {
-    if (now - lastBeatTime > 300) { // 300ms以上空ける（≒200bpm未満制限）
-      beatCount++;
-      lastBeatTime = now;
-      log(`ドックン ${beatCount} 回`);
-    }
-    aboveThreshold = true;
+    const now = Date.now();
+    if (value > threshold && !aboveThreshold) {
+      if (now - lastBeatTime > 300) {
+        beatCount++;
+        lastBeatTime = now;
+        log(`ドックン ${beatCount} 回`);
+      }
+      aboveThreshold = true;
     } else if (value < threshold) {
       aboveThreshold = false;
     }
   }
 
   function lowPassFilter(currentValue) {
-    if(currentValue==""){
-      return;
-    }
+    if (currentValue === "") return;
     const filtered = alpha * currentValue + (1 - alpha) * prevFiltered;
     prevFiltered = filtered;
     return filtered;
   }
 
   async function sendToESP() {
-    if (!characteristic) {
-      log("まだ接続されていません");
-      return;
-    }
+    if (!characteristic) return log("まだ接続されていません");
     const text = document.getElementById("textToSend").value;
     const data = new TextEncoder().encode(text);
     await characteristic.writeValue(data);
@@ -94,23 +100,15 @@
   }
 
   async function sendStart() {
-    if (!characteristic) {
-      log("まだ接続されていません");
-      return;
-    }
-    const text = "start";
-    const data = new TextEncoder().encode(text);
+    if (!characteristic) return log("まだ接続されていません");
+    const data = new TextEncoder().encode("start");
     await characteristic.writeValue(data);
     log("START");
   }
 
   async function sendStop() {
-    if (!characteristic) {
-      log("まだ接続されていません");
-      return;
-    }
-    const text = "stop";
-    const data = new TextEncoder().encode(text);
+    if (!characteristic) return log("まだ接続されていません");
+    const data = new TextEncoder().encode("stop");
     await characteristic.writeValue(data);
     log("STOP");
   }
@@ -121,9 +119,25 @@
 
   function addData(data) {
     dataArray.push(data);
-    document.getElementById("dataText").textContent = JSON.stringify(dataArray)//.slice(-1));
+    if (dataArray.length > 800) dataArray.shift(); // 最大800点まで
+    document.getElementById("dataText").textContent = JSON.stringify(dataArray.slice(-20));
+    drawGraph();
   }
-</script>
 
+  function drawGraph() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.beginPath();
+    for (let i = 0; i < dataArray.length; i++) {
+      const x = i;
+      const y = canvas.height - (dataArray[i] - 1500) * (canvas.height / 1000);
+      if (i === 0) {
+        ctx.moveTo(x, y);
+      } else {
+        ctx.lineTo(x, y);
+      }
+    }
+    ctx.stroke();
+  }
+  </script>
 </body>
 </html>
