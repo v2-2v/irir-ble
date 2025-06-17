@@ -16,6 +16,14 @@
   <button onclick="sendStop()">通信終了</button>
   <input type="text" id="textToSend" placeholder="送信する文字列">
   <button onclick="sendToESP()">送信</button>
+  <p>
+  しきい値 (超えたらどっくん判定する値): <input type="range" id="thresholdSlider" min="1800" max="2500" value="2080" step="1">
+  <span id="thresholdValue">2080</span>
+  </p>
+  <div id="heart" style="display: none; position: absolute; top: 50px; left: 50px; width: 100px;">
+    ❤️
+  </div>
+
   <p id="log">ログ: <span id="logText">未接続</span></p>
   <div id="dataText">[]</div>
 
@@ -36,6 +44,13 @@
   let lastBeatTime = 0;
   let threshold = 2080;
   let aboveThreshold = false;
+  
+  const thresholdSlider = document.getElementById("thresholdSlider");
+  const thresholdValue = document.getElementById("thresholdValue");
+  thresholdSlider.addEventListener("input", () => {
+    threshold = parseInt(thresholdSlider.value);
+    thresholdValue.textContent = threshold;
+  });
 
   const canvas = document.getElementById("graph");
   const ctx = canvas.getContext("2d");
@@ -77,11 +92,19 @@
         beatCount++;
         lastBeatTime = now;
         log(`ドックン ${beatCount} 回`);
+        showHeart();  // ← 追加
       }
       aboveThreshold = true;
     } else if (value < threshold) {
       aboveThreshold = false;
     }
+  }
+  function showHeart() {
+    const heart = document.getElementById("heart");
+    heart.style.display = "block";
+    setTimeout(() => {
+      heart.style.display = "none";
+    }, 150); // 0.15秒だけ表示
   }
 
   function lowPassFilter(currentValue) {
