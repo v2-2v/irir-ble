@@ -182,7 +182,7 @@
         await loadImages();
       }
 
-      for (let i = 0; i < frameCount; i++) {
+      for (let i = frameCount - 1; i >= 0; i--) {
         hctx.clearRect(0, 0, hcanvas.width, hcanvas.height);
         hctx.drawImage(images[i], 0, 0, hcanvas.width, hcanvas.height);
         await wait(frameDelay);
