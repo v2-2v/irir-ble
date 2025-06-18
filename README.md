@@ -7,5 +7,5 @@ ESP32とブラウザのJavaScriptで通信する
 https://github.com/user-attachments/assets/f8ac3fd1-b63c-4f2d-9654-5055e7e3a7bb
 
 
-本リポジトリの内容はすべて著作権で保護されています。
+本リポジトリのSVGはすべて著作権で保護されています。
 無断での使用・複製・転載・改変・商用利用を固く禁じます。
